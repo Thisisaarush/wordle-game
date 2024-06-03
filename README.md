@@ -1,36 +1,19 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Wordle Game
 
-## Getting Started
+The goal is to guess the hidden five-letter word in five or fever attempts.
 
-First, run the development server:
+## Rules
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+- You have five attempts to guess the correct word.
+- Each guess must be a valid five-letter word.
+- After each guess, the game provides feedback by coloring the letters of your guessed word:
+  - Green: The letter is in the correct position.
+  - Yellow: The letter is in the word but in the wrong position.
+  - Gray: The letter is not in the word at all.
+- If a word contains repeated letters, each instance of the letter is evaluated separately based on its position in the word.
+- Only words from the game's word list are considered valid guesses.
+- You win if you guess the correct word within five attempts.
+- You lose if you fail to guess the word within five attempts. The correct word is then revealed.
+- There is only one Wordle puzzle per day, which is the same for all players worldwide.
+- There are no hints or clues given apart from the color-coded feedback on each guess.
+- The game is not case-sensitive; uppercase and lowercase letters are treated the same.
