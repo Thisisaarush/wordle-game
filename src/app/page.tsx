@@ -114,13 +114,6 @@ export default function Home() {
             newKeyColor[userAttempt] = Array(5).fill("green")
             return newKeyColor
           })
-          setTimeout(() => {
-            alert(
-              `Congratulations! You have guessed the word correctly. 🎉 Total Attempts: ${
-                userAttempt + 1
-              }`
-            )
-          }, 1000)
         } else {
           const correctWord = wordOfTheDay.split("")
           const guessedWord = attempts[userAttempt]
@@ -161,21 +154,54 @@ export default function Home() {
   }
 
   return (
-    <div className="flex justify-center flex-col items-center gap-2 min-h-screen">
-      {attempts.map((attempt, parentIndex) => (
-        <div
-          key={parentIndex}
-          className="flex justify-center items-center gap-2"
-        >
-          {attempts?.map((_, idx) => (
-            <Square
-              key={idx}
-              letter={attempt[idx]}
-              bgColor={keyColor[parentIndex][idx]}
-            />
-          ))}
+    <div className="min-h-screen flex flex-col justify-center items-center gap-10">
+      <h1 className="font-medium text-3xl max-w-xl text-center">
+        {isCorrectGuess ? (
+          <p className="text-xl text-balance">
+            Congratulations! You have guessed the word correctly. 🎉 Total
+            Attempts: {userAttempt}
+          </p>
+        ) : !isCorrectGuess && userAttempt === totalAttemptsAllowed ? (
+          <p className="text-xl text-balance">
+            You have reached the maximum number of attempts. The word was :{" "}
+            {wordOfTheDay.toUpperCase()}
+          </p>
+        ) : (
+          "Guess The Word"
+        )}
+      </h1>
+
+      <div className="flex justify-center flex-col items-center gap-2">
+        {attempts.map((attempt, parentIndex) => (
+          <div
+            key={parentIndex}
+            className="flex justify-center items-center gap-2"
+          >
+            {attempts?.map((_, idx) => (
+              <Square
+                key={idx}
+                letter={attempt[idx]}
+                bgColor={keyColor[parentIndex][idx]}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-col gap-4 border p-6 rounded-md border-black dark:border-white">
+        <div>
+          Instructions: <br />
+          - You have a total of 5 attempts to guess the word. <br />
+          - Press Enter to submit your guess. <br />
+          - Press Backspace to delete the last letter. <br />
         </div>
-      ))}
+        <div>
+          Color Guide: <br />
+          - 💚 Green color indicates correct letter and position. <br />
+          - 🧡 Orange color indicates correct letter but wrong position. <br />
+          - 🩶 Gray color indicates wrong letter. <br />
+        </div>
+      </div>
     </div>
   )
 }
