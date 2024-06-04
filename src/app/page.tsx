@@ -1,7 +1,9 @@
 "use client"
 
+import { OnScreenKeyboard } from "@/components/onScreenKeyboard"
 import { Square } from "@/components/square"
-import { useEffect, useState } from "react"
+import { on } from "events"
+import { useCallback, useEffect, useState } from "react"
 
 // Utility function to get initial state from localStorage or set default
 const getInitialState = (
@@ -29,6 +31,82 @@ export default function Home() {
   const [attempts, setAttempts] = useState<string[][]>([])
   const [keyColor, setKeyColor] = useState<string[][]>([])
   const [isCorrectGuess, setIsCorrectGuess] = useState<boolean>(false)
+
+  // Handle key press for both physical and on-screen keyboard
+  const handleKeyDown = useCallback(
+    (onScreenKey?: string, event?: KeyboardEvent) => {
+      console.log("physical", event?.key, "Screen", onScreenKey)
+      // console.log(userAttempt, totalAttemptsAllowed, attempts)
+
+      if (userAttempt >= totalAttemptsAllowed) {
+        return
+      }
+
+      const key = (event?.key || onScreenKey || "").toLowerCase()
+      const isLetter = /^[a-zA-Z]$/.test(key)
+      const isBackspace = key === "backspace"
+      const isEnter = key === "enter"
+
+      // If the key is a letter
+      if (isLetter && attempts[userAttempt]?.length < 5 && !isCorrectGuess) {
+        setAttempts((prevAttempts) => {
+          const newAttempts = [...prevAttempts]
+          newAttempts[userAttempt] = [...newAttempts[userAttempt], key]
+          return newAttempts
+        })
+      }
+
+      // If the key is backspace
+      if (isBackspace && attempts[userAttempt]?.length > 0) {
+        setAttempts((prevAttempts) => {
+          const newAttempts = [...prevAttempts]
+          newAttempts[userAttempt] = newAttempts[userAttempt].slice(0, -1)
+          return newAttempts
+        })
+      }
+
+      // If the key is enter
+      if (isEnter && attempts[userAttempt]?.length === 5) {
+        setUserAttempt((prev) => prev + 1)
+
+        // Check if the user attempt is correct
+        const isCorrect = attempts[userAttempt].join("") === wordOfTheDay
+
+        setIsCorrectGuess(isCorrect)
+
+        if (isCorrect) {
+          setKeyColor((prevKeyColor) => {
+            const newKeyColor = [...prevKeyColor]
+            newKeyColor[userAttempt] = Array(5).fill("green")
+            return newKeyColor
+          })
+        } else {
+          const correctWord = wordOfTheDay.split("")
+          const guessedWord = attempts[userAttempt]
+
+          // Update key colors
+          setKeyColor((prevKeyColor) => {
+            const newKeyColor = [...prevKeyColor]
+            const newColors = Array(5).fill("")
+
+            for (let i = 0; i < 5; i++) {
+              if (guessedWord[i] === correctWord[i]) {
+                newColors[i] = "green"
+              } else if (correctWord.includes(guessedWord[i])) {
+                newColors[i] = "orange"
+              } else {
+                newColors[i] = "gray"
+              }
+            }
+
+            newKeyColor[userAttempt] = newColors
+            return newKeyColor
+          })
+        }
+      }
+    },
+    [attempts, isCorrectGuess, userAttempt, wordOfTheDay]
+  )
 
   // Initialize state from localStorage
   useEffect(() => {
@@ -63,99 +141,26 @@ export default function Home() {
     wordOfTheDay,
   ])
 
+  const handleKeyDownEvent = useCallback(
+    (e: KeyboardEvent) => handleKeyDown("", e),
+    [handleKeyDown]
+  )
+
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      console.log(event.key)
-      console.log(userAttempt, totalAttemptsAllowed, attempts)
-
-      if (userAttempt >= totalAttemptsAllowed) {
-        alert(
-          `You have reached the maximum number of attempts. The word was ${wordOfTheDay}`
-        )
-        return
-      }
-      const key = event.key
-      const isLetter = /^[a-zA-Z]$/.test(key)
-      const isBackspace = key === "Backspace"
-      const isEnter = key === "Enter"
-
-      // If the key is a letter
-      if (isLetter && attempts[userAttempt].length < 5 && !isCorrectGuess) {
-        setAttempts((prevAttempts) => {
-          const newAttempts = [...prevAttempts]
-          newAttempts[userAttempt] = [...newAttempts[userAttempt], key]
-          return newAttempts
-        })
-      }
-
-      // If the key is backspace
-      if (isBackspace && attempts[userAttempt].length > 0) {
-        setAttempts((prevAttempts) => {
-          const newAttempts = [...prevAttempts]
-          newAttempts[userAttempt] = newAttempts[userAttempt].slice(0, -1)
-          return newAttempts
-        })
-      }
-
-      // If the key is enter
-      if (isEnter && attempts[userAttempt].length === 5) {
-        setUserAttempt((prev) => prev + 1)
-
-        // Check if the user attempt is correct
-        const isCorrect =
-          attempts[userAttempt].join("").toLowerCase() ===
-          wordOfTheDay.toLowerCase()
-
-        setIsCorrectGuess(isCorrect)
-
-        if (isCorrect) {
-          setKeyColor((prevKeyColor) => {
-            const newKeyColor = [...prevKeyColor]
-            newKeyColor[userAttempt] = Array(5).fill("green")
-            return newKeyColor
-          })
-        } else {
-          const correctWord = wordOfTheDay.split("")
-          const guessedWord = attempts[userAttempt]
-
-          // Update key colors
-          setKeyColor((prevKeyColor) => {
-            const newKeyColor = [...prevKeyColor]
-            const newColors = Array(5).fill("")
-
-            for (let i = 0; i < 5; i++) {
-              if (
-                guessedWord[i].toLowerCase() === correctWord[i].toLowerCase()
-              ) {
-                newColors[i] = "green"
-              } else if (correctWord.includes(guessedWord[i].toLowerCase())) {
-                newColors[i] = "orange"
-              } else {
-                newColors[i] = "gray"
-              }
-            }
-
-            newKeyColor[userAttempt] = newColors
-            return newKeyColor
-          })
-        }
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown)
+    window.addEventListener("keydown", handleKeyDownEvent)
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown)
+      window.removeEventListener("keydown", handleKeyDownEvent)
     }
-  }, [attempts, isCorrectGuess, userAttempt, wordOfTheDay])
+  }, [handleKeyDownEvent])
 
   if (!hasMounted) {
     return null
   }
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center gap-10">
-      <h1 className="font-medium text-3xl max-w-xl text-center">
+    <div className="min-h-screen flex flex-col justify-center items-center gap-16">
+      <div className="font-medium text-3xl max-w-xl text-center">
         {isCorrectGuess ? (
           <p className="text-xl text-balance">
             Congratulations! You have guessed the word correctly. 🎉 Total
@@ -169,7 +174,7 @@ export default function Home() {
         ) : (
           "Guess The Word"
         )}
-      </h1>
+      </div>
 
       <div className="flex justify-center flex-col items-center gap-2">
         {attempts.map((attempt, parentIndex) => (
@@ -187,6 +192,8 @@ export default function Home() {
           </div>
         ))}
       </div>
+
+      <OnScreenKeyboard handleKeyDown={handleKeyDown} />
 
       <div className="flex flex-col gap-4 border p-6 rounded-md border-black dark:border-white">
         <div>
