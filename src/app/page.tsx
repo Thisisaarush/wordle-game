@@ -1,9 +1,10 @@
 "use client"
 
-import { OnScreenKeyboard } from "@/components/onScreenKeyboard"
-import { Square } from "@/components/square"
-import { on } from "events"
 import { useCallback, useEffect, useState } from "react"
+
+// Components
+import { Square } from "@/components/square"
+import { OnScreenKeyboard } from "@/components/onScreenKeyboard"
 
 // Utility function to get initial state from localStorage or set default
 const getInitialState = (
@@ -32,12 +33,26 @@ export default function Home() {
   const [keyColor, setKeyColor] = useState<string[][]>([])
   const [isCorrectGuess, setIsCorrectGuess] = useState<boolean>(false)
 
+  useEffect(() => {
+    const fetchWord = async () => {
+      try {
+        const response = await fetch("/api/wordlist")
+        if (!response.ok) {
+          throw new Error("Failed to fetch word")
+        }
+        const data = await response.json()
+        setWordOfTheDay(data.word)
+      } catch (err) {
+        console.error("Error while fetching word", err)
+      }
+    }
+
+    fetchWord()
+  }, [])
+
   // Handle key press for both physical and on-screen keyboard
   const handleKeyDown = useCallback(
     (onScreenKey?: string, event?: KeyboardEvent) => {
-      console.log("physical", event?.key, "Screen", onScreenKey)
-      // console.log(userAttempt, totalAttemptsAllowed, attempts)
-
       if (userAttempt >= totalAttemptsAllowed) {
         return
       }
@@ -110,7 +125,6 @@ export default function Home() {
 
   // Initialize state from localStorage
   useEffect(() => {
-    setWordOfTheDay(getInitialState("wordOfTheDay", "great"))
     setUserAttempt(getInitialState("userAttempt", 0))
     setAttempts(
       getInitialState("attempts", Array(totalAttemptsAllowed).fill([]))
@@ -126,7 +140,6 @@ export default function Home() {
   // Save state to localStorage
   useEffect(() => {
     if (hasMounted) {
-      localStorage.setItem("wordOfTheDay", JSON.stringify(wordOfTheDay))
       localStorage.setItem("userAttempt", JSON.stringify(userAttempt))
       localStorage.setItem("attempts", JSON.stringify(attempts))
       localStorage.setItem("keyColor", JSON.stringify(keyColor))
