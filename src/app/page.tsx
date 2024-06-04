@@ -3,13 +3,65 @@
 import { Square } from "@/components/square"
 import { useEffect, useState } from "react"
 
-export default function Home() {
-  const [userAttempt, setUserAttempt] = useState(0)
-  const [attempts, setAttempts] = useState<string[][]>([[], [], [], [], []])
-  const [keyColor, setKeyColor] = useState<string[][]>([[], [], [], [], []])
+// Utility function to get initial state from localStorage or set default
+const getInitialState = (
+  key: string,
+  defaultValue: string | number | boolean | string[][]
+) => {
+  const savedState = typeof window !== "undefined" && localStorage.getItem(key)
+  try {
+    if (savedState) return JSON.parse(savedState)
+    return defaultValue
+  } catch (error) {
+    console.error(`Error parsing localStorage key “${key}”: ${error}`)
+    return defaultValue
+  }
+}
 
-  let wordOfTheDay = "great"
+export default function Home() {
   const totalAttemptsAllowed = 5
+
+  // Fix for hydration mismatch
+  const [hasMounted, setHasMounted] = useState(false)
+
+  const [wordOfTheDay, setWordOfTheDay] = useState<string>("")
+  const [userAttempt, setUserAttempt] = useState<number>(0)
+  const [attempts, setAttempts] = useState<string[][]>([])
+  const [keyColor, setKeyColor] = useState<string[][]>([])
+  const [isCorrectGuess, setIsCorrectGuess] = useState<boolean>(false)
+
+  // Initialize state from localStorage
+  useEffect(() => {
+    setWordOfTheDay(getInitialState("wordOfTheDay", "great"))
+    setUserAttempt(getInitialState("userAttempt", 0))
+    setAttempts(
+      getInitialState("attempts", Array(totalAttemptsAllowed).fill([]))
+    )
+    setKeyColor(
+      getInitialState("keyColor", Array(totalAttemptsAllowed).fill([]))
+    )
+    setIsCorrectGuess(getInitialState("isCorrectGuess", false))
+
+    setHasMounted(true)
+  }, [])
+
+  // Save state to localStorage
+  useEffect(() => {
+    if (hasMounted) {
+      localStorage.setItem("wordOfTheDay", JSON.stringify(wordOfTheDay))
+      localStorage.setItem("userAttempt", JSON.stringify(userAttempt))
+      localStorage.setItem("attempts", JSON.stringify(attempts))
+      localStorage.setItem("keyColor", JSON.stringify(keyColor))
+      localStorage.setItem("isCorrectGuess", JSON.stringify(isCorrectGuess))
+    }
+  }, [
+    attempts,
+    hasMounted,
+    isCorrectGuess,
+    keyColor,
+    userAttempt,
+    wordOfTheDay,
+  ])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -28,7 +80,7 @@ export default function Home() {
       const isEnter = key === "Enter"
 
       // If the key is a letter
-      if (isLetter && attempts[userAttempt].length < 5) {
+      if (isLetter && attempts[userAttempt].length < 5 && !isCorrectGuess) {
         setAttempts((prevAttempts) => {
           const newAttempts = [...prevAttempts]
           newAttempts[userAttempt] = [...newAttempts[userAttempt], key]
@@ -54,12 +106,21 @@ export default function Home() {
           attempts[userAttempt].join("").toLowerCase() ===
           wordOfTheDay.toLowerCase()
 
+        setIsCorrectGuess(isCorrect)
+
         if (isCorrect) {
-          alert(
-            `Congratulations! You have guessed the word correctly. 🎉 Total Attempts: ${
-              userAttempt + 1
-            }`
-          )
+          setKeyColor((prevKeyColor) => {
+            const newKeyColor = [...prevKeyColor]
+            newKeyColor[userAttempt] = Array(5).fill("green")
+            return newKeyColor
+          })
+          setTimeout(() => {
+            alert(
+              `Congratulations! You have guessed the word correctly. 🎉 Total Attempts: ${
+                userAttempt + 1
+              }`
+            )
+          }, 1000)
         } else {
           const correctWord = wordOfTheDay.split("")
           const guessedWord = attempts[userAttempt]
@@ -70,9 +131,11 @@ export default function Home() {
             const newColors = Array(5).fill("")
 
             for (let i = 0; i < 5; i++) {
-              if (guessedWord[i] === correctWord[i]) {
+              if (
+                guessedWord[i].toLowerCase() === correctWord[i].toLowerCase()
+              ) {
                 newColors[i] = "green"
-              } else if (correctWord.includes(guessedWord[i])) {
+              } else if (correctWord.includes(guessedWord[i].toLowerCase())) {
                 newColors[i] = "orange"
               } else {
                 newColors[i] = "gray"
@@ -91,7 +154,11 @@ export default function Home() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown)
     }
-  }, [attempts, userAttempt, wordOfTheDay])
+  }, [attempts, isCorrectGuess, userAttempt, wordOfTheDay])
+
+  if (!hasMounted) {
+    return null
+  }
 
   return (
     <div className="flex justify-center flex-col items-center gap-2 min-h-screen">
