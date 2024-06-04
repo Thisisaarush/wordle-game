@@ -172,7 +172,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center gap-16">
+    <div className="min-h-screen flex flex-col justify-center items-center gap-12 md:gap-16 py-10">
       <div className="font-medium text-3xl max-w-xl text-center">
         {isCorrectGuess ? (
           <p className="text-xl text-balance">
