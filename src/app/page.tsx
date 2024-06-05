@@ -170,11 +170,7 @@ export default function Home() {
     tomorrow.setHours(0, 0, 0, 0)
     const timeToMidnight = tomorrow.getTime() - now.getTime()
 
-    const interval = setInterval(resetLocalStorage, timeToMidnight)
-
-    return () => {
-      clearInterval(interval)
-    }
+    setTimeout(resetLocalStorage, timeToMidnight)
   }, [])
 
   const handleKeyDownEvent = useCallback(
