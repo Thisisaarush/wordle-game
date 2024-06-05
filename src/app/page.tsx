@@ -154,6 +154,29 @@ export default function Home() {
     wordOfTheDay,
   ])
 
+  // reset localstorage everyday
+  useEffect(() => {
+    const resetLocalStorage = () => {
+      localStorage.clear()
+      setUserAttempt(0)
+      setAttempts(() => Array(totalAttemptsAllowed).fill([]))
+      setKeyColor(() => Array(totalAttemptsAllowed).fill([]))
+      setIsCorrectGuess(false)
+    }
+
+    const now = new Date()
+    const tomorrow = new Date()
+    tomorrow.setDate(now.getDate() + 1)
+    tomorrow.setHours(0, 0, 0, 0)
+    const timeToMidnight = tomorrow.getTime() - now.getTime()
+
+    const interval = setInterval(resetLocalStorage, timeToMidnight)
+
+    return () => {
+      clearInterval(interval)
+    }
+  }, [])
+
   const handleKeyDownEvent = useCallback(
     (e: KeyboardEvent) => handleKeyDown("", e),
     [handleKeyDown]
