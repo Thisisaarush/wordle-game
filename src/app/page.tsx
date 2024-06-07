@@ -33,23 +33,6 @@ export default function Home() {
   const [keyColor, setKeyColor] = useState<string[][]>([])
   const [isCorrectGuess, setIsCorrectGuess] = useState<boolean>(false)
 
-  useEffect(() => {
-    const fetchWord = async () => {
-      try {
-        const response = await fetch("/api/wordlist")
-        if (!response.ok) {
-          throw new Error("Failed to fetch word")
-        }
-        const data = await response.json()
-        setWordOfTheDay(data.word)
-      } catch (err) {
-        console.error("Error while fetching word", err)
-      }
-    }
-
-    fetchWord()
-  }, [])
-
   // Handle key press for both physical and on-screen keyboard
   const handleKeyDown = useCallback(
     (onScreenKey?: string, event?: KeyboardEvent) => {
@@ -123,8 +106,38 @@ export default function Home() {
     [attempts, isCorrectGuess, userAttempt, wordOfTheDay]
   )
 
+  // Fetch word of the day
+  useEffect(() => {
+    const fetchWord = async () => {
+      try {
+        const response = await fetch("/api/wordlist")
+        if (!response.ok) {
+          throw new Error("Failed to fetch word")
+        }
+        const data = await response.json()
+        setWordOfTheDay(data.word)
+      } catch (err) {
+        console.error("Error while fetching word", err)
+      }
+    }
+
+    fetchWord()
+  }, [])
+
   // Initialize state from localStorage
   useEffect(() => {
+    const storedTimestamp = localStorage.getItem("timestamp")
+    if (storedTimestamp) {
+      const currentDay = new Date().getDay()
+      const storedDay = new Date(storedTimestamp).getDay()
+      if (currentDay !== storedDay) {
+        localStorage.clear()
+        setUserAttempt(0)
+        setAttempts(() => Array(totalAttemptsAllowed).fill([]))
+        setKeyColor(() => Array(totalAttemptsAllowed).fill([]))
+        setIsCorrectGuess(false)
+      }
+    }
     setUserAttempt(getInitialState("userAttempt", 0))
     setAttempts(
       getInitialState("attempts", Array(totalAttemptsAllowed).fill([]))
@@ -140,6 +153,11 @@ export default function Home() {
   // Save state to localStorage
   useEffect(() => {
     if (hasMounted) {
+      // Only update the timestamp when the user makes a new attempt
+      if (userAttempt > 0) {
+        const now = new Date()
+        localStorage.setItem("timestamp", now.toISOString())
+      }
       localStorage.setItem("userAttempt", JSON.stringify(userAttempt))
       localStorage.setItem("attempts", JSON.stringify(attempts))
       localStorage.setItem("keyColor", JSON.stringify(keyColor))
@@ -153,25 +171,6 @@ export default function Home() {
     userAttempt,
     wordOfTheDay,
   ])
-
-  // reset localstorage everyday
-  useEffect(() => {
-    const resetLocalStorage = () => {
-      localStorage.clear()
-      setUserAttempt(0)
-      setAttempts(() => Array(totalAttemptsAllowed).fill([]))
-      setKeyColor(() => Array(totalAttemptsAllowed).fill([]))
-      setIsCorrectGuess(false)
-    }
-
-    const now = new Date()
-    const tomorrow = new Date()
-    tomorrow.setDate(now.getDate() + 1)
-    tomorrow.setHours(0, 0, 0, 0)
-    const timeToMidnight = tomorrow.getTime() - now.getTime()
-
-    setTimeout(resetLocalStorage, timeToMidnight)
-  }, [])
 
   const handleKeyDownEvent = useCallback(
     (e: KeyboardEvent) => handleKeyDown("", e),
