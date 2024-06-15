@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { db } from "@/lib/db"
 
 // Components
 import { Square } from "@/components/square"
@@ -110,7 +111,7 @@ export default function Home() {
   useEffect(() => {
     const fetchWord = async () => {
       try {
-        const response = await fetch("/api/wordlist", { cache: "no-store" })
+        const response = await fetch("/api/wordlist")
         if (!response.ok) {
           throw new Error("Failed to fetch word")
         }

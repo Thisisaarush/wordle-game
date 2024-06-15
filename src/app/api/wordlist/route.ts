@@ -1,36 +1,19 @@
+import { db } from "@/lib/db"
 import { promises as fs } from "fs"
 import path from "path"
 
-export const dynamic = "force-dynamic"
-
-async function writeCachedWord(word: { word: string; date: string }) {
-  const filePath = path.join(process.cwd(), "src/data", "cachedWord.json")
-  await fs.writeFile(filePath, JSON.stringify(word), "utf8")
-}
-
-async function readCachedWord(): Promise<{
-  word: string
-  date: string
-} | null> {
-  const filePath = path.join(process.cwd(), "src/data", "cachedWord.json")
-  try {
-    const data = await fs.readFile(filePath, "utf8")
-    return JSON.parse(data)
-  } catch (error) {
-    return null
-  }
-}
-
 export async function GET(request: Request) {
   try {
+    const dbCache = await db.wordOfTheDay.findFirst()
+    const cachedWord = dbCache?.word
+    const cachedDate = dbCache?.createdAt.toISOString().split("T")[0]
+
     // Get today's date in YYYY-MM-DD format
     const today = new Date().toISOString().split("T")[0]
-    // Read the cached word from the file
-    let cachedWord = await readCachedWord()
 
     // Check if we have a cached word for today
-    if (cachedWord && cachedWord.date === today) {
-      return Response.json({ word: cachedWord.word })
+    if (cachedWord && cachedDate === today) {
+      return Response.json({ word: cachedWord })
     }
 
     // Read the file content from wordlist.txt
@@ -47,14 +30,20 @@ export async function GET(request: Request) {
     const word =
       words.length > 0 ? words[Math.floor(Math.random() * words.length)] : ""
 
-    // Cache the word for today
-    cachedWord = { word, date: today }
-    // Write the cached word to the file
-    await writeCachedWord(cachedWord)
+    if (!dbCache) {
+      await db.wordOfTheDay.create({
+        data: { word, createdAt: new Date() },
+      })
+    } else {
+      await db.wordOfTheDay.update({
+        where: { id: dbCache.id },
+        data: { word, createdAt: new Date() },
+      })
+    }
 
     return Response.json({ word })
   } catch (error) {
     console.error(error)
-    return Response.json({ error: "Failed to read file" }, { status: 500 })
+    return Response.json({ error: "Failed to read DB" }, { status: 500 })
   }
 }
