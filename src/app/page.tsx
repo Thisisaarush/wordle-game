@@ -110,7 +110,7 @@ export default function Home() {
   useEffect(() => {
     const fetchWord = async () => {
       try {
-        const response = await fetch("/api/wordlist")
+        const response = await fetch("/api/wordlist", { cache: "no-store" })
         if (!response.ok) {
           throw new Error("Failed to fetch word")
         }

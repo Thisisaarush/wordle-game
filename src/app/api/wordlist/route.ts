@@ -1,6 +1,8 @@
 import { promises as fs } from "fs"
 import path from "path"
 
+export const dynamic = "force-dynamic"
+
 async function writeCachedWord(word: { word: string; date: string }) {
   const filePath = path.join(process.cwd(), "src/data", "cachedWord.json")
   await fs.writeFile(filePath, JSON.stringify(word), "utf8")
