@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { db } from "@/lib/db"
 
 // Components
 import { Square } from "@/components/square"
