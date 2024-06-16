@@ -1,23 +1,8 @@
-import { db } from "@/lib/db"
 import { promises as fs } from "fs"
 import path from "path"
 
-export const dynamic = "force-dynamic"
-
 export async function GET(request: Request) {
   try {
-    const dbCache = await db.wordOfTheDay.findFirst()
-    const cachedWord = dbCache?.word
-    const cachedDate = dbCache?.createdAt.toISOString().split("T")[0]
-
-    // Get today's date in YYYY-MM-DD format
-    const today = new Date().toISOString().split("T")[0]
-
-    // Check if we have a cached word for today
-    if (cachedWord && cachedDate === today) {
-      return Response.json({ word: cachedWord })
-    }
-
     // Read the file content from wordlist.txt
     const filePath = path.join(process.cwd(), "src/data", "wordlist.txt")
     const data = await fs.readFile(filePath, "utf8")
@@ -28,24 +13,15 @@ export async function GET(request: Request) {
       .map((word) => word.trim())
       .filter((word) => word.length > 0)
 
-    // Select a random word
-    const word =
-      words.length > 0 ? words[Math.floor(Math.random() * words.length)] : ""
+    // select a unique and random word for the day
+    const epochMs = Date.now() - 1641013200000
+    const msInDay = 1000 * 60 * 60 * 24
+    const currentDay = Math.floor(epochMs / msInDay)
+    const newWordOfTheDay = words[currentDay % words.length]
 
-    if (!dbCache) {
-      await db.wordOfTheDay.create({
-        data: { word, createdAt: new Date() },
-      })
-    } else {
-      await db.wordOfTheDay.update({
-        where: { id: dbCache.id },
-        data: { word, createdAt: new Date() },
-      })
-    }
-
-    return Response.json({ word })
+    return Response.json({ word: newWordOfTheDay })
   } catch (error) {
     console.error(error)
-    return Response.json({ error: "Failed to read DB" }, { status: 500 })
+    return Response.json({ error: "Failed to generate word" }, { status: 500 })
   }
 }
