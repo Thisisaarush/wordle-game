@@ -1,6 +1,8 @@
 import { promises as fs } from "fs"
 import path from "path"
 
+export const dynamic = "force-dynamic"
+
 export async function GET(request: Request) {
   try {
     // Read the file content from wordlist.txt
