@@ -28,6 +28,7 @@ export default function Home() {
   const [hasMounted, setHasMounted] = useState(false)
 
   const [wordOfTheDay, setWordOfTheDay] = useState<string>("")
+  const [prevDayWord, setPreviousDayWord] = useState<string>("")
   const [userAttempt, setUserAttempt] = useState<number>(0)
   const [attempts, setAttempts] = useState<string[][]>([])
   const [keyColor, setKeyColor] = useState<string[][]>([])
@@ -126,17 +127,13 @@ export default function Home() {
 
   // Initialize state from localStorage
   useEffect(() => {
-    const storedTimestamp = localStorage.getItem("timestamp")
-    if (storedTimestamp) {
-      const currentDay = new Date().getDay()
-      const storedDay = new Date(storedTimestamp).getDay()
-      if (currentDay !== storedDay) {
-        localStorage.clear()
-        setUserAttempt(0)
-        setAttempts(() => Array(totalAttemptsAllowed).fill([]))
-        setKeyColor(() => Array(totalAttemptsAllowed).fill([]))
-        setIsCorrectGuess(false)
-      }
+    if (prevDayWord !== wordOfTheDay) {
+      setPreviousDayWord(wordOfTheDay)
+      localStorage.clear()
+      setUserAttempt(0)
+      setAttempts(() => Array(totalAttemptsAllowed).fill([]))
+      setKeyColor(() => Array(totalAttemptsAllowed).fill([]))
+      setIsCorrectGuess(false)
     }
     setUserAttempt(getInitialState("userAttempt", 0))
     setAttempts(
@@ -148,16 +145,11 @@ export default function Home() {
     setIsCorrectGuess(getInitialState("isCorrectGuess", false))
 
     setHasMounted(true)
-  }, [])
+  }, [wordOfTheDay, prevDayWord])
 
   // Save state to localStorage
   useEffect(() => {
     if (hasMounted) {
-      // Only update the timestamp when the user makes a new attempt
-      if (userAttempt > 0) {
-        const now = new Date()
-        localStorage.setItem("timestamp", now.toISOString())
-      }
       localStorage.setItem("userAttempt", JSON.stringify(userAttempt))
       localStorage.setItem("attempts", JSON.stringify(attempts))
       localStorage.setItem("keyColor", JSON.stringify(keyColor))
